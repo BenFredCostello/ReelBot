@@ -2,6 +2,7 @@ import pyautogui
 import time
 import random
 import os
+import pyperclip
 
 # Get onto Insta Reels
 def setup(app, buttonnewtab):
@@ -38,9 +39,10 @@ def scroll_and_like(app, buttonnewtab):
             delay = delay + 7 + value
         
         #Time until potential like
-        randint2 = random.randint(1,round(1+100/delay))
+        hashtags = search_hashtags(app, buttonnewtab) if app[0][0] == 1470 else 1
+        randint2 = random.randint(1,round(2+100/(delay*hashtags))) #potential like
         delay2 = 0
-        if randint2 == 2:
+        if randint2 == 1:
             delay2 = delay * random.gauss(mu=0.5, sigma=0.3)
             if delay2 < 0:
                 delay2 = delay2 + delay
@@ -52,8 +54,8 @@ def scroll_and_like(app, buttonnewtab):
             if delay < 0:
                 delay = delay * delay
         counter = counter + delay
-        print("Delay is: ", delay)
-        print("Time until like is: ", delay2)
+        #print("Delay is: ", delay)
+        #print("Time until like is: ", delay2)
         time.sleep(delay2)
         if delay2 > 0:
             if delay2 > delay:
@@ -63,26 +65,79 @@ def scroll_and_like(app, buttonnewtab):
         time.sleep(delay - delay2)
         pyautogui.scroll(-1)
 
-    print("Finished watching, closing tab")
-    newtabadd = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
-    pyautogui.moveTo(newtabadd, duration=0)
-    pyautogui.move(-60,0)
-    time.sleep(1)
+    close_tab()
+
+def search_hashtags(insta, buttonnewtab): #making just for insta at the moment
+    try:
+        pyautogui.locateCenterOnScreen('instareels.png', region=(1680,950,100,500), confidence=0.8)
+    except pyautogui.ImageNotFoundException:
+        print("Image not found, resetting tab")
+        close_tab()
+        setup(insta, buttonnewtab)
+    pyautogui.moveTo(1550, 1332)
+    time.sleep(0.1)
+    pyautogui.click() #more bar
+    time.sleep(0.3)
     pyautogui.click()
-    time.sleep(2)
+    time.sleep(0.3)
+    pyautogui.click()
+    pyperclip.copy("")   # clear clipboard explicitly
+    time.sleep(0.1)
+    pyautogui.hotkey('ctrl', 'c')  # ctrl-c to copy
+    time.sleep(0.2)
+    pyautogui.click()
+    pyautogui.moveTo(1750,950)
+    time.sleep(0.1)
+    clipboard = pyperclip.paste()
+    text = clipboard
+    #print("Clipboard contents:", extract_captions(text))
+    badwords = ["gym", "self", "fitness", "fashion", "movie", "film", "america", "politics", "food", "game", "philosophy", "trump", "hot", "girl", "tate", "redpill", "kirk"]
+    # If text can be a list of strings, join first
+    if isinstance(text, list):
+        text = "\n".join(text)
+    text = text.lower()
+    badwords = [w.lower() for w in badwords]
+
+    if any(w in text for w in badwords):
+        print("Bad match found:    ", text)
+        return 0.1
+
+    words = ["math", "physics" , "sewing", "knitting", "crochet", "christianity", "christian", "python", "coding", "programming", "developer", "software", "engineer", "quant", "investing"]
+    # If text can be a list of strings, join first
+    if isinstance(text, list):
+        text = "\n".join(text)
+    text = text.lower()
+    words = [w.lower() for w in words]
+
+    if any(w in text for w in words):
+        print("Match found:    ", text)
+        return 4
+
+    return 1 
+    
+def close_tab():
+    print("Finished watching, closing tab")
+    try:
+        newtabadd = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
+        pyautogui.moveTo(newtabadd, duration=0)
+        pyautogui.move(-60,0)
+        time.sleep(1)
+        pyautogui.click()
+        time.sleep(2)
+    except: 
+        print("cant find delete")
 
 def main():
     time.sleep(3)
     buttonnewtab = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
-    insta = [1620,730], [100,560], [1750,950], [5,5] #shortcut, reels tab, like button, load times
-    yt = [1770,730], [100,330], [1700,810], [15,5]
+    insta = [1470,730], [100,560], [1741,971], [5,5] #shortcut, reels tab, like button, load times
+    yt = [1620,730], [100,330], [1700,810], [15,5]
 
     setup(insta, buttonnewtab)
     scroll_and_like(insta, buttonnewtab)
 
     setup(yt, buttonnewtab)
     scroll_and_like(yt, buttonnewtab)
-    #Need to add close tab function
     os.system("rundll32.exe powrprof.dll,SetSuspendState Sleep")
 if __name__ == "__main__":
     main()
