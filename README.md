@@ -1,8 +1,8 @@
 Introduction:
-This code uses the pyautogui python package to interact with social media reels (instagram and youtube) on a laptop. The purpose is to scroll through and like reels automatically to decrease the effectiveness of the algorithms on us. Currently for instagram certain words in the description decrease the probability of a like while other ones increase it. Meanwhile the youtube liking is completely random. This is partly to compare how the algorithm changes, and partly because instagram likes can be publicly seen so I wanted to minimise liking very weird reels for my social footprint.
+This code uses the pyautogui python package to interact with social media reels (instagram and youtube) on a laptop. The purpose is to scroll through and like reels automatically to decrease the effectiveness of the algorithms on us. Currently for instagram certain words in the description decrease the probability of a like while other ones increase it. Meanwhile the youtube liking is completely random. This is partly to compare how the algorithm changes, and partly because instagram likes can be publicly seen so I wanted to minimise liking very weird reels for my social footprint. It makes your computer go into hibernation at the end so I leave it on when I go to bed and it runs for around 2 hours.
 
 Scripts:
-There are 2 scripts, main.py for all of the intended functionality (can run straight away but is designed to be compiled to executable code and run as a shortcut), and getcoords.py, designed to constantly return mouse coordinates so that it is easier to hardcode locations for the mouse to move to.
+There are 2 scripts, main.py for all of the intended functionality (can run straight away but is designed to be compiled to executable code and run as a shortcut), and getcoords.py, designed to constantly return mouse coordinates so that it is easier to hardcode locations for the mouse to move to. I have another .ps1 script containing "Stop-Process -Name "Python" -Force -ErrorAction SilentlyContinue" which is bound to a shortcut to kill the script if needed
 
 Packages:
 Pyautogui, pyperclip, and pyinstaller
