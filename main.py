@@ -4,6 +4,8 @@ import random
 import os
 import pyperclip
 
+good_count = 0
+bad_count = 0
 # Get onto Insta Reels
 def setup(app):
     try:
@@ -64,19 +66,20 @@ def scroll_and_like(app):
         counter = counter + delay
         #print("Delay is: ", delay)
         #print("Time until like is: ", delay2)
-        sleep(delay2)
+        sleep(delay2*hashtags**(1/10))
         if delay2 > 0:
             if delay2 > delay:
                 delay2 = delay - (random.gauss(mu=4, sigma=2))**2
             pyautogui.click()
             print("Reel Liked")
-        sleep(delay - delay2)
+        sleep((delay - delay2)*hashtags**(1/10))
         pyautogui.scroll(-1)
 
     close_tab()
 
 def search_hashtags(insta): #making just for insta at the moment
     try:
+        sleep(1)
         pyautogui.locateCenterOnScreen('instareels.png', region=(1680,950,100,500), confidence=0.8)
     except pyautogui.ImageNotFoundException:
         print("Image not found, resetting tab")
@@ -99,18 +102,22 @@ def search_hashtags(insta): #making just for insta at the moment
     clipboard = pyperclip.paste()
     text = clipboard
     #print("Clipboard contents:", extract_captions(text))
-    badwords = [] #fill in your own words to avoid
+    badwords = ["gym", "self", "fitness", "fashion", "movie", "film", "america", "politics", "food", "game", "philosophy", "trump", "hot", "girl", "tate", "redpill", "kirk", "fuentes", "government", "funny", "skit", "comedy", "goals", "cat", "health", "cute", "wake", "spirit", "habit", "psych", "dog", "sad", "gland", "truth", "devil", "satan", "evil"] #fill in your own words to avoid
     # If text can be a list of strings, join first
     if isinstance(text, list):
         text = "\n".join(text)
     text = text.lower()
     badwords = [w.lower() for w in badwords]
 
+    global bad_count, good_count
     if any(w in text for w in badwords):
-        print("Bad match found:    ", text)
-        return 0.01
+        bad_count += 1
+        total = good_count + bad_count
+        ratio = good_count / total if total > 0 else 0
+        print(f"Bad match found ({good_count}:{bad_count}, ratio={ratio:.2f}) → {text}")
+        return 0.00001
 
-    words = [] #fill in your own words to like
+    words = ["math", "physics" , "sewing", "knitting", "crochet", "christianity", "christian", "python", "coding", "programming", "developer", "software", "engineer", "quant", "investing"] #fill in your own words to like
     # If text can be a list of strings, join first
     if isinstance(text, list):
         text = "\n".join(text)
@@ -118,16 +125,19 @@ def search_hashtags(insta): #making just for insta at the moment
     words = [w.lower() for w in words]
 
     if any(w in text for w in words):
-        print("Match found:    ", text)
+        good_count += 1
+        total = good_count + bad_count
+        ratio = good_count / total if total > 0 else 0
+        print(f"Good match found ({good_count}:{bad_count}, ratio={ratio:.2f}) → {text}")
         return 1000
 
-    return 1 
+    return 0.0001 
     
 def close_tab():
     print("Finished watching, closing tab")
     try:
-        newtabadd = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
-        pyautogui.moveTo(newtabadd, duration=0)
+        buttonnewtab = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
+        pyautogui.moveTo(buttonnewtab, duration=0)
         pyautogui.move(-60,0)
         sleep(1)
         pyautogui.click()
