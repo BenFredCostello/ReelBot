@@ -1,15 +1,26 @@
+# main.py
+import os
 import pyautogui
 import time
 import random
-import os
 import pyperclip
+import ctypes
+
+from platforms.instagram import InstagramPlatform
+from platforms.youtube import YouTubePlatform
+from decision.classifier import ContentClassifier
+from engine.runner import Runner
+
+AVG_WATCH_TIME_MINUTES = 30
+LIKE_RATE = 0.1  # Base like rate, not added yet
 
 good_count = 0
 bad_count = 0
+classifier = ContentClassifier()
 # Get onto Insta Reels
 def setup(app):
     try:
-        buttonnewtab = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
+        buttonnewtab = pyautogui.locateOnScreen('images/newtab.png', confidence=0.9)
     except pyautogui.ImageNotFoundException:
         print("New tab button not found, retrying...")
         time.sleep(2)
@@ -19,22 +30,29 @@ def setup(app):
 
     pyautogui.click()
 
+
+    
     # Instagram Coordinate
-    pyautogui.moveTo(app[0][0], app[0][1], duration=0) #Insta Shortcut
+    pyautogui.moveTo(app.shortcut) #Insta Shortcut
     sleep(1)
     pyautogui.click()
-    sleep(app[3][0]) #delays based on site loading time
-    pyautogui.moveTo(app[1][0], app[1][1], duration=0) #Reels Tab
+    sleep(app.load_time) #delays based on site loading time
+    pyautogui.moveTo(app.reels_tab) #Reels Tab
     pyautogui.click()
-    pyautogui.moveTo(app[2][0], app[2][1], duration=0) #Like Button
-    sleep(app[3][1])
+    pyautogui.moveTo(app.like_button) #Like Button
+    sleep(app.load_time)
 
 def scroll_and_like(app):
+
     #Watch Time, approx chunks of half an hour
-    watch_time = random.randint(1,3) * 1469 + random.gauss(mu=0, sigma=500)
+    watch_time = abs(random.randint(1,3) * AVG_WATCH_TIME_MINUTES * 30 + random.gauss(mu=0, sigma=500))
     print("Watchtime is: ", watch_time)
     counter = 0
     while counter < watch_time:
+        if is_capslock_on():
+            print("Capslock detected, taking a break...")
+            time.sleep(2)
+            continue
         #Watch Time
         randint = random.randint(-2,3)
         if randint < 0:
@@ -49,8 +67,14 @@ def scroll_and_like(app):
             delay = delay + 7 + value
         
         #Time until potential like
-        hashtags = search_hashtags(app) if app[0][0] == 1470 else 1
-        randint2 = random.randint(1,round(2+100/(delay*hashtags))) #potential like
+        if app.name == "Instagram":
+            text = app.extract_text()
+            score = classifier.score(text)
+            print("Content score: ", score)
+        else:
+            score = 1
+
+        randint2 = random.randint(1,round(2+100/(delay*score))) #potential like
         delay2 = 0
         if randint2 == 1:
             delay2 = delay * random.gauss(mu=0.5, sigma=0.3)
@@ -64,99 +88,38 @@ def scroll_and_like(app):
             if delay < 0:
                 delay = delay * delay
         counter = counter + delay
-        #print("Delay is: ", delay)
+        print("Delay is: ", delay*score**(1/5))
         #print("Time until like is: ", delay2)
-        sleep(delay2*hashtags**(1/10))
+        sleep(delay2*score**(1/5))
         if delay2 > 0:
             if delay2 > delay:
                 delay2 = delay - (random.gauss(mu=4, sigma=2))**2
+            app.update_like_button()
+            pyautogui.moveTo(app.like_button)
             pyautogui.click()
             print("Reel Liked")
-        sleep((delay - delay2)*hashtags**(1/10))
+        sleep((delay - delay2)*score**(1/5))
         pyautogui.scroll(-1)
-
-    close_tab()
-
-def search_hashtags(insta): #making just for insta at the moment
-    try:
-        sleep(1)
-        pyautogui.locateCenterOnScreen('instareels.png', region=(1680,950,100,500), confidence=0.8)
-    except pyautogui.ImageNotFoundException:
-        print("Image not found, resetting tab")
-        close_tab()
-        setup(insta)
-    pyautogui.moveTo(1550, 1332)
-    sleep(0.1)
-    pyautogui.click() #more bar
-    sleep(0.3)
-    pyautogui.click()
-    sleep(0.3)
-    pyautogui.click()
-    pyperclip.copy("")   # clear clipboard explicitly
-    sleep(0.1)
-    pyautogui.hotkey('ctrl', 'c')  # ctrl-c to copy
-    sleep(0.2)
-    pyautogui.click()
-    pyautogui.moveTo(1750,950)
-    sleep(0.1)
-    clipboard = pyperclip.paste()
-    text = clipboard
-    #print("Clipboard contents:", extract_captions(text))
-    badwords = ["gym", "self", "fitness", "fashion", "movie", "film", "america", "politics", "food", "game", "philosophy", "trump", "hot", "girl", "tate", "redpill", "kirk", "fuentes", "government", "funny", "skit", "comedy", "goals", "cat", "health", "cute", "wake", "spirit", "habit", "psych", "dog", "sad", "gland", "truth", "devil", "satan", "evil"] #fill in your own words to avoid
-    # If text can be a list of strings, join first
-    if isinstance(text, list):
-        text = "\n".join(text)
-    text = text.lower()
-    badwords = [w.lower() for w in badwords]
-
-    global bad_count, good_count
-    if any(w in text for w in badwords):
-        bad_count += 1
-        total = good_count + bad_count
-        ratio = good_count / total if total > 0 else 0
-        print(f"Bad match found ({good_count}:{bad_count}, ratio={ratio:.2f}) → {text}")
-        return 0.00001
-
-    words = ["math", "physics" , "sewing", "knitting", "crochet", "christianity", "christian", "python", "coding", "programming", "developer", "software", "engineer", "quant", "investing"] #fill in your own words to like
-    # If text can be a list of strings, join first
-    if isinstance(text, list):
-        text = "\n".join(text)
-    text = text.lower()
-    words = [w.lower() for w in words]
-
-    if any(w in text for w in words):
-        good_count += 1
-        total = good_count + bad_count
-        ratio = good_count / total if total > 0 else 0
-        print(f"Good match found ({good_count}:{bad_count}, ratio={ratio:.2f}) → {text}")
-        return 1000
-
-    return 0.0001 
-    
-def close_tab():
-    print("Finished watching, closing tab")
-    try:
-        buttonnewtab = pyautogui.locateOnScreen('newtab.png', confidence=0.9)
-        pyautogui.moveTo(buttonnewtab, duration=0)
-        pyautogui.move(-60,0)
-        sleep(1)
-        pyautogui.click()
-        sleep(2)
-    except: 
-        print("cant find delete")
+    app.close()
 
 def sleep(t):
     time.sleep(abs(t))
 
+def is_capslock_on():
+    # 0x14 is VK_CAPITAL
+    return bool(ctypes.WinDLL("User32.dll").GetKeyState(0x14) & 1)
+
+print(is_capslock_on())
+
 def main():
-    insta = [1470,730], [100,560], [1741,971], [5,5] #shortcut, reels tab, like button, load times
-    yt = [1620,730], [100,330], [1700,810], [15,5]
+    instagram = InstagramPlatform()
+    youtube = YouTubePlatform()
+    instagram.setup()
+    #setup(instagram)
+    scroll_and_like(instagram)
 
-    setup(insta)
-    scroll_and_like(insta)
-
-    setup(yt)
-    scroll_and_like(yt)
+    setup(youtube)
+    scroll_and_like(youtube)
     os.system("rundll32.exe powrprof.dll,SetSuspendState Sleep")
 if __name__ == "__main__":
     main()
